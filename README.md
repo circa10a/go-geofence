@@ -48,3 +48,38 @@ func main() {
 	fmt.Println("Address nearby: ", isAddressNearby)
 }
 ```
+
+### Private IP Addresses
+
+Private IP's will always result in `false` since their coordinates will come back as `0.0000`. You can work around these like so:
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/circa10a/go-geofence"
+)
+
+func main() {
+	// Provide an IP Address to test with
+	ipAddress := "192.168.1.100"
+	geofence, err := geofence.New("", "YOUR_IPSTACK.COM_API_TOKEN", 3)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Create cache that holds status in memory until application is restarted
+	geofence.CreateCache(-1)
+	if !strings.HasPrefix(ipAddress, "192.") && !strings.HasPrefix(ipAddress, "172.") && !strings.HasPrefix(ipAddress, "10.") {
+		isAddressNearby, err := geofence.IsIPAddressNear(ipAddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// Address nearby: false
+		fmt.Println("Address nearby: ", isAddressNearby)
+	}
+}
+```
