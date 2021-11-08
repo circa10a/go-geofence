@@ -1,0 +1,4 @@
+github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
+github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
+github.com/qioalice/ipstack v1.0.1 h1:Ync2O+tR2AH9/TzTg4aeJxd9c1Xz2CeH1joECwnhvms=
+github.com/qioalice/ipstack v1.0.1/go.mod h1:6eB9LdNCUdUoOsfDB8Pn2GpmD2I+f2k3yR30ceuf/rY=
