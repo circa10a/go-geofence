@@ -103,8 +103,10 @@ func New(ipAddress, ipStackAPIToken string, sensitivity int) (*Geofence, error) 
 // CreateCache creates a new cache for IP address lookups to reduce ipstack.com calls/improve performance
 // Accepts a duration to keep items in cache. Use -1 to keep items in memory indefinitely
 func (g *Geofence) CreateCache(duration time.Duration) {
-	g.Cache = cache.New(duration, duration)
-	g.CacheCreated = true
+	if !g.CacheCreated {
+		g.Cache = cache.New(duration, duration)
+		g.CacheCreated = true
+	}
 }
 
 // IsIPAddressNear returns true if the specified address is within proximity
