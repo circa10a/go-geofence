@@ -1,5 +1,9 @@
 # go-geofence
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/circa10a/go-geofence?style=plastic)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/circa10a/go-geofence)](https://pkg.go.dev/github.com/circa10a/go-geofence?tab=overview)
+[![Go Report Card](https://goreportcard.com/badge/github.com/circa10a/go-geofence)](https://goreportcard.com/report/github.com/circa10a/go-geofence)
+
 A small library to detect if an IP address is close to yours or another of your choosing using https://ipstack.com/
 
 ## Usage
