@@ -7,9 +7,9 @@ import (
 
 func TestFormatCoordinates(t *testing.T) {
 	type test struct {
-		Input       float32
 		Expected    string
 		Sensitivity int
+		Input       float32
 	}
 	tests := []test{
 		{
@@ -58,8 +58,8 @@ func TestFormatCoordinates(t *testing.T) {
 
 func TestValidateSensitivity(t *testing.T) {
 	type test struct {
-		Input    int
 		Expected error
+		Input    int
 	}
 	tests := []test{
 		{
@@ -105,8 +105,8 @@ func TestValidateSensitivity(t *testing.T) {
 
 func TestValidateIPAddress(t *testing.T) {
 	type test struct {
-		Input    string
 		Expected error
+		Input    string
 	}
 	tests := []test{
 		{

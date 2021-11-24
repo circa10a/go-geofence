@@ -13,11 +13,11 @@ import (
 // Geofence holds a Geofenced IP config
 type Geofence struct {
 	Cache         *cache.Cache
-	CacheCreated  bool
 	IPStackClient *ipstack.Client
+	Sensitivity   int
 	Latitude      float32
 	Longitude     float32
-	Sensitivity   int
+	CacheCreated  bool
 }
 
 // formatCoordinates converts decimal points to size of sensitivity and givens back a string for comparison
