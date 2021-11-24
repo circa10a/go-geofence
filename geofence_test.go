@@ -9,7 +9,7 @@ func TestFormatCoordinates(t *testing.T) {
 	type test struct {
 		Expected    string
 		Sensitivity int
-		Input       float32
+		Input       float64
 	}
 	tests := []test{
 		{

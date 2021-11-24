@@ -6,22 +6,51 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/patrickmn/go-cache"
-	"github.com/qioalice/ipstack"
+)
+
+const (
+	freeGeoIPBaseURL = "https://api.freegeoip.app/json"
 )
 
 // Geofence holds a Geofenced IP config
 type Geofence struct {
-	Cache         *cache.Cache
-	IPStackClient *ipstack.Client
-	Sensitivity   int
-	Latitude      float32
-	Longitude     float32
-	CacheCreated  bool
+	Cache           *cache.Cache
+	FreeGeoIPClient *resty.Client
+	token           string
+	Sensitivity     int
+	Latitude        float64
+	Longitude       float64
+	CacheCreated    bool
+}
+
+// FreeGeoIPResponse is the json response from freegeoip.app
+type FreeGeoIPResponse struct {
+	IP          string  `json:"ip"`
+	CountryCode string  `json:"country_code"`
+	CountryName string  `json:"country_name"`
+	RegionCode  string  `json:"region_code"`
+	RegionName  string  `json:"region_name"`
+	City        string  `json:"city"`
+	ZipCode     string  `json:"zip_code"`
+	TimeZone    string  `json:"time_zone"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	MetroCode   int     `json:"metro_code"`
+}
+
+// FreeGeoIPError is the json response when there is an error from freegeoip.app
+type FreeGeoIPError struct {
+	Message string `json:"message"`
+}
+
+func (e *FreeGeoIPError) Error() string {
+	return e.Message
 }
 
 // formatCoordinates converts decimal points to size of sensitivity and givens back a string for comparison
-func formatCoordinates(sensitivity int, location float32) string {
+func formatCoordinates(sensitivity int, location float64) string {
 	return fmt.Sprintf("%*.*f", 0, sensitivity, location)
 }
 
@@ -47,9 +76,26 @@ func validateIPAddress(ipAddress string) error {
 	return nil
 }
 
+// getIPGeoData fetches geolocation data for specified IP address from https://freegeoip.app
+func (g *Geofence) getIPGeoData(ipAddress string) (*FreeGeoIPResponse, error) {
+	resp, err := g.FreeGeoIPClient.R().
+		SetHeader("Accept", "application/json").
+		SetQueryParam("apikey", g.token).
+		SetResult(&FreeGeoIPResponse{}).
+		SetError(&FreeGeoIPError{}).
+		Get(ipAddress)
+	if err != nil {
+		return &FreeGeoIPResponse{}, err
+	}
+	if resp.IsError() {
+		return &FreeGeoIPResponse{}, resp.Error().(*FreeGeoIPError)
+	}
+	return resp.Result().(*FreeGeoIPResponse), nil
+}
+
 // New creates a new geofence for the IP address specified.
 // Use "" as the ip address to geofence the machine your application is running on
-// Token comes from ipstack.com
+// Token comes from https://freegeoip.app/
 // Sensitivity is for proximity:
 // 0 - 111 km
 // 1 - 11.1 km
@@ -57,50 +103,41 @@ func validateIPAddress(ipAddress string) error {
 // 3 111 meters
 // 4 11.1 meters
 // 5 1.11 meters
-func New(ipAddress, ipStackAPIToken string, sensitivity int) (*Geofence, error) {
-	// Create new client for ipstack.com
-	ipStackClient, err := ipstack.New(ipStackAPIToken)
-	if err != nil {
-		return nil, err
-	}
+func New(ipAddress, freeGeoIPAPIToken string, sensitivity int) (*Geofence, error) {
+	// Create new client for freegeoip.app
+	freeGeoIPClient := resty.New().SetBaseURL(freeGeoIPBaseURL)
 
 	// Ensure sensitivity is between 1 - 5
-	err = validateSensitivity(sensitivity)
+	err := validateSensitivity(sensitivity)
 	if err != nil {
 		return nil, err
 	}
 
 	// New Geofence object
 	geofence := &Geofence{
-		IPStackClient: ipStackClient,
-		Sensitivity:   sensitivity,
+		FreeGeoIPClient: freeGeoIPClient,
+		Sensitivity:     sensitivity,
 	}
 
-	// If no ip address passed, get current device location details
-	if ipAddress == "" {
-		currentHostLocation, err := geofence.IPStackClient.Me()
-		if err != nil {
-			return nil, err
-		}
-		geofence.Latitude = currentHostLocation.Latitide
-		geofence.Longitude = currentHostLocation.Longitude
-		// If address is passed, fetch details for it
-	} else {
-		err = validateIPAddress(ipAddress)
-		if err != nil {
-			return nil, err
-		}
-		remoteHostLocation, err := geofence.IPStackClient.IP(ipAddress)
-		if err != nil {
-			return nil, err
-		}
-		geofence.Latitude = remoteHostLocation.Latitide
-		geofence.Longitude = remoteHostLocation.Longitude
+	// Hold token
+	geofence.token = freeGeoIPAPIToken
+
+	// Get current location of specified IP address
+	// If empty string, use public IP of device running this
+	// Or use location of the specified IP
+	ipAddressLookupDetails, err := geofence.getIPGeoData(ipAddress)
+	if err != nil {
+		return nil, err
 	}
+
+	// Set the location of our geofence to compare against looked up IP's
+	geofence.Latitude = ipAddressLookupDetails.Latitude
+	geofence.Longitude = ipAddressLookupDetails.Longitude
+
 	return geofence, nil
 }
 
-// CreateCache creates a new cache for IP address lookups to reduce ipstack.com calls/improve performance
+// CreateCache creates a new cache for IP address lookups to reduce calls/improve performance
 // Accepts a duration to keep items in cache. Use -1 to keep items in memory indefinitely
 func (g *Geofence) CreateCache(duration time.Duration) {
 	if !g.CacheCreated {
@@ -123,14 +160,14 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 		}
 	}
 	// If not in cache, lookup IP and compare
-	ipAddressLookupDetails, err := g.IPStackClient.IP(ipAddress)
+	ipAddressLookupDetails, err := g.getIPGeoData(ipAddress)
 	if err != nil {
 		return false, err
 	}
 	// Format our IP coordinates and the clients
 	currentLat := formatCoordinates(g.Sensitivity, g.Latitude)
 	currentLong := formatCoordinates(g.Sensitivity, g.Longitude)
-	clientLat := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Latitide)
+	clientLat := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Latitude)
 	clientLong := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Longitude)
 	// Compare coordinates
 	isNear := currentLat == clientLat && currentLong == clientLong
