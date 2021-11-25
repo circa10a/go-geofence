@@ -3,6 +3,8 @@ package geofence
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFormatCoordinates(t *testing.T) {
@@ -64,7 +66,7 @@ func TestValidateSensitivity(t *testing.T) {
 	tests := []test{
 		{
 			Input:    6,
-			Expected: ErrInvalidSensitivity,
+			Expected: &ErrInvalidSensitivity{},
 		},
 		{
 			Input:    5,
@@ -92,13 +94,17 @@ func TestValidateSensitivity(t *testing.T) {
 		},
 		{
 			Input:    -1,
-			Expected: ErrInvalidSensitivity,
+			Expected: &ErrInvalidSensitivity{},
 		},
 	}
 	for _, test := range tests {
 		actual := validateSensitivity(test.Input)
-		if !errors.Is(actual, test.Expected) {
-			t.Fail()
+		if test.Expected != nil {
+			assert.EqualErrorf(t, actual, invalidSensitivityErrString, "Error should be: %v, got: %v", invalidSensitivityErrString, actual)
+		} else {
+			if !errors.Is(actual, test.Expected) {
+				t.Fail()
+			}
 		}
 	}
 }
@@ -115,13 +121,17 @@ func TestValidateIPAddress(t *testing.T) {
 		},
 		{
 			Input:    "8.8.88",
-			Expected: ErrInvalidIPAddress,
+			Expected: &ErrInvalidIPAddress{},
 		},
 	}
 	for _, test := range tests {
 		actual := validateIPAddress(test.Input)
-		if !errors.Is(actual, test.Expected) {
-			t.Fail()
+		if test.Expected != nil {
+			assert.EqualErrorf(t, actual, invalidIPAddressString, "Error should be: %v, got: %v", invalidIPAddressString, actual)
+		} else {
+			if !errors.Is(actual, test.Expected) {
+				t.Fail()
+			}
 		}
 	}
 }

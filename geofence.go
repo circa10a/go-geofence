@@ -1,7 +1,6 @@
 package geofence
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -11,7 +10,9 @@ import (
 )
 
 const (
-	freeGeoIPBaseURL = "https://api.freegeoip.app/json"
+	freeGeoIPBaseURL            = "https://api.freegeoip.app/json"
+	invalidSensitivityErrString = "invalid sensitivity. value must be between 0 - 5"
+	invalidIPAddressString      = "invalid IPv4 address provided"
 )
 
 // Geofence holds a Geofenced IP config
@@ -48,29 +49,41 @@ func (e *FreeGeoIPError) Error() string {
 	return e.Message
 }
 
-// formatCoordinates converts decimal points to size of sensitivity and givens back a string for comparison
-func formatCoordinates(sensitivity int, location float64) string {
-	return fmt.Sprintf("%*.*f", 0, sensitivity, location)
+// ErrInvalidSensitivity is the error raised when sensitivity is less than 0 or more than 5
+type ErrInvalidSensitivity struct {
+	msg string
 }
 
-// ErrInvalidSensitivity is the error raised when sensitivity is less than 0 or more than 5
-var ErrInvalidSensitivity = errors.New("invalid sensitivity. value must be between 0 - 5")
+func (e *ErrInvalidSensitivity) Error() string {
+	return e.msg
+}
+
+// ErrInvalidIPAddress is the error raised when an invalid IP address is provided
+type ErrInvalidIPAddress struct {
+	msg string
+}
+
+func (e *ErrInvalidIPAddress) Error() string {
+	return e.msg
+}
 
 // validateSensitivity ensures valid value between 0 - 5
 func validateSensitivity(sensitivity int) error {
 	if sensitivity < 0 || sensitivity > 5 {
-		return ErrInvalidSensitivity
+		return &ErrInvalidSensitivity{
+			msg: invalidSensitivityErrString,
+		}
 	}
 	return nil
 }
 
-// ErrInvalidIPAddress is the error raised when an invalid IP address is provided
-var ErrInvalidIPAddress = errors.New("invalid IPv4 address provided")
-
 // validateIPAddress ensures valid ipv4 address
 func validateIPAddress(ipAddress string) error {
+	ipAddressErr := &ErrInvalidIPAddress{
+		msg: invalidIPAddressString,
+	}
 	if net.ParseIP(ipAddress) == nil {
-		return ErrInvalidIPAddress
+		return ipAddressErr
 	}
 	return nil
 }
@@ -146,6 +159,11 @@ func (g *Geofence) CreateCache(duration time.Duration) {
 	if g.Cache == nil {
 		g.Cache = cache.New(duration, duration)
 	}
+}
+
+// formatCoordinates converts decimal points to size of sensitivity and givens back a string for comparison
+func formatCoordinates(sensitivity int, location float64) string {
+	return fmt.Sprintf("%*.*f", 0, sensitivity, location)
 }
 
 // IsIPAddressNear returns true if the specified address is within proximity
