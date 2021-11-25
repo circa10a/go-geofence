@@ -22,7 +22,6 @@ type Geofence struct {
 	Sensitivity     int
 	Latitude        float64
 	Longitude       float64
-	CacheCreated    bool
 }
 
 // FreeGeoIPResponse is the json response from freegeoip.app
@@ -87,9 +86,12 @@ func (g *Geofence) getIPGeoData(ipAddress string) (*FreeGeoIPResponse, error) {
 	if err != nil {
 		return &FreeGeoIPResponse{}, err
 	}
+
+	// If api gives back status code >399, report error to user
 	if resp.IsError() {
 		return &FreeGeoIPResponse{}, resp.Error().(*FreeGeoIPError)
 	}
+
 	return resp.Result().(*FreeGeoIPResponse), nil
 }
 
@@ -140,9 +142,9 @@ func New(ipAddress, freeGeoIPAPIToken string, sensitivity int) (*Geofence, error
 // CreateCache creates a new cache for IP address lookups to reduce calls/improve performance
 // Accepts a duration to keep items in cache. Use -1 to keep items in memory indefinitely
 func (g *Geofence) CreateCache(duration time.Duration) {
-	if !g.CacheCreated {
+	// Only create if not created yet
+	if g.Cache == nil {
 		g.Cache = cache.New(duration, duration)
-		g.CacheCreated = true
 	}
 }
 
@@ -153,27 +155,33 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	// Check if ipaddress has been looked up before and is in cache
-	if g.CacheCreated {
+	if g.Cache != nil {
 		if isIPAddressNear, found := g.Cache.Get(ipAddress); found {
 			return isIPAddressNear.(bool), nil
 		}
 	}
+
 	// If not in cache, lookup IP and compare
 	ipAddressLookupDetails, err := g.getIPGeoData(ipAddress)
 	if err != nil {
 		return false, err
 	}
+
 	// Format our IP coordinates and the clients
 	currentLat := formatCoordinates(g.Sensitivity, g.Latitude)
 	currentLong := formatCoordinates(g.Sensitivity, g.Longitude)
 	clientLat := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Latitude)
 	clientLong := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Longitude)
+
 	// Compare coordinates
 	isNear := currentLat == clientLat && currentLong == clientLong
+
 	// Insert ip address and it's status into the cache if user instantiated a cache
-	if g.CacheCreated {
+	if g.Cache != nil {
 		g.Cache.Set(ipAddress, isNear, cache.DefaultExpiration)
 	}
+
 	return isNear, nil
 }
