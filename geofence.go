@@ -10,19 +10,27 @@ import (
 )
 
 const (
-	freeGeoIPBaseURL            = "https://api.freegeoip.app/json"
-	invalidSensitivityErrString = "invalid sensitivity. value must be between 0 - 5"
-	invalidIPAddressString      = "invalid IPv4 address provided"
+	freeGeoIPBaseURL                = "https://api.freegeoip.app/json"
+	invalidSensitivityErrString     = "invalid sensitivity. value must be between 0 - 5"
+	invalidIPAddressString          = "invalid IPv4 address provided"
+	deleteExpiredCacheItemsInternal = 10 * time.Minute
 )
 
-// Geofence holds a Geofenced IP config
+// Config holds the user configuration to setup a new geofence
+type Config struct {
+	IPAddress   string
+	Token       string
+	Sensitivity int
+	CacheTTL    time.Duration
+}
+
+// Geofence holds a freegeoip.app client, cache and user supplied config
 type Geofence struct {
 	Cache           *cache.Cache
 	FreeGeoIPClient *resty.Client
-	token           string
-	Sensitivity     int
-	Latitude        float64
-	Longitude       float64
+	Config
+	Latitude  float64
+	Longitude float64
 }
 
 // FreeGeoIPResponse is the json response from freegeoip.app
@@ -92,7 +100,7 @@ func validateIPAddress(ipAddress string) error {
 func (g *Geofence) getIPGeoData(ipAddress string) (*FreeGeoIPResponse, error) {
 	resp, err := g.FreeGeoIPClient.R().
 		SetHeader("Accept", "application/json").
-		SetQueryParam("apikey", g.token).
+		SetQueryParam("apikey", g.Token).
 		SetResult(&FreeGeoIPResponse{}).
 		SetError(&FreeGeoIPError{}).
 		Get(ipAddress)
@@ -118,31 +126,29 @@ func (g *Geofence) getIPGeoData(ipAddress string) (*FreeGeoIPResponse, error) {
 // 3 111 meters
 // 4 11.1 meters
 // 5 1.11 meters
-func New(ipAddress, freeGeoIPAPIToken string, sensitivity int) (*Geofence, error) {
+func New(c *Config) (*Geofence, error) {
 	// Create new client for freegeoip.app
 	freeGeoIPClient := resty.New().SetBaseURL(freeGeoIPBaseURL)
 
 	// Ensure sensitivity is between 1 - 5
-	err := validateSensitivity(sensitivity)
+	err := validateSensitivity(c.Sensitivity)
 	if err != nil {
 		return nil, err
 	}
 
 	// New Geofence object
 	geofence := &Geofence{
+		Config:          *c,
 		FreeGeoIPClient: freeGeoIPClient,
-		Sensitivity:     sensitivity,
+		Cache:           cache.New(c.CacheTTL, deleteExpiredCacheItemsInternal),
 	}
-
-	// Hold token
-	geofence.token = freeGeoIPAPIToken
 
 	// Get current location of specified IP address
 	// If empty string, use public IP of device running this
 	// Or use location of the specified IP
-	ipAddressLookupDetails, err := geofence.getIPGeoData(ipAddress)
+	ipAddressLookupDetails, err := geofence.getIPGeoData(c.IPAddress)
 	if err != nil {
-		return nil, err
+		return geofence, err
 	}
 
 	// Set the location of our geofence to compare against looked up IP's
@@ -150,15 +156,6 @@ func New(ipAddress, freeGeoIPAPIToken string, sensitivity int) (*Geofence, error
 	geofence.Longitude = ipAddressLookupDetails.Longitude
 
 	return geofence, nil
-}
-
-// CreateCache creates a new cache for IP address lookups to reduce calls/improve performance
-// Accepts a duration to keep items in cache. Use -1 to keep items in memory indefinitely
-func (g *Geofence) CreateCache(duration time.Duration) {
-	// Only create if not created yet
-	if g.Cache == nil {
-		g.Cache = cache.New(duration, duration)
-	}
 }
 
 // formatCoordinates converts decimal points to size of sensitivity and givens back a string for comparison
@@ -175,10 +172,8 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	}
 
 	// Check if ipaddress has been looked up before and is in cache
-	if g.Cache != nil {
-		if isIPAddressNear, found := g.Cache.Get(ipAddress); found {
-			return isIPAddressNear.(bool), nil
-		}
+	if isIPAddressNear, found := g.Cache.Get(ipAddress); found {
+		return isIPAddressNear.(bool), nil
 	}
 
 	// If not in cache, lookup IP and compare
@@ -197,9 +192,7 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	isNear := currentLat == clientLat && currentLong == clientLong
 
 	// Insert ip address and it's status into the cache if user instantiated a cache
-	if g.Cache != nil {
-		g.Cache.Set(ipAddress, isNear, cache.DefaultExpiration)
-	}
+	g.Cache.Set(ipAddress, isNear, cache.DefaultExpiration)
 
 	return isNear, nil
 }

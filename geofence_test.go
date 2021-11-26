@@ -2,8 +2,12 @@ package geofence
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
 	"testing"
+	"time"
 
+	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -134,4 +138,94 @@ func TestValidateIPAddress(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestGeofenceNear(t *testing.T) {
+	fakeIPAddress := "8.8.8.8"
+	fakeApiToken := "fakeApiToken"
+	fakeLatitude := 37.751
+	fakeLongitude := -97.822
+	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
+
+	// new geofence
+	geofence, _ := New(&Config{
+		IPAddress:   fakeIPAddress,
+		Token:       fakeApiToken,
+		Sensitivity: 3,                    // 3 is recommended
+		CacheTTL:    7 * (24 * time.Hour), // 1 week
+	})
+	geofence.Latitude = fakeLatitude
+	geofence.Longitude = fakeLongitude
+
+	httpmock.ActivateNonDefault(geofence.FreeGeoIPClient.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	// mock json rsponse
+	response := &FreeGeoIPResponse{
+		IP:          fakeIPAddress,
+		CountryCode: "US",
+		CountryName: "United States",
+		TimeZone:    "America/Chicago",
+		Latitude:    fakeLatitude,
+		Longitude:   fakeLongitude,
+	}
+
+	// mock freegeoip.app response
+	httpmock.RegisterResponder("GET", fakeEndpoint,
+		func(req *http.Request) (*http.Response, error) {
+			resp, err := httpmock.NewJsonResponse(200, response)
+			if err != nil {
+				return httpmock.NewStringResponse(500, ""), nil
+			}
+			return resp, nil
+		})
+
+	isAddressNearby, err := geofence.IsIPAddressNear(fakeIPAddress)
+	assert.NoError(t, err)
+	assert.True(t, isAddressNearby)
+}
+
+func TestGeofenceNotNear(t *testing.T) {
+	fakeIPAddress := "8.8.8.8"
+	fakeApiToken := "fakeApiToken"
+	fakeLatitude := 37.751
+	fakeLongitude := -98.822
+	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
+
+	// new geofence
+	geofence, _ := New(&Config{
+		IPAddress:   fakeIPAddress,
+		Token:       fakeApiToken,
+		Sensitivity: 3,                    // 3 is recommended
+		CacheTTL:    7 * (24 * time.Hour), // 1 week
+	})
+	geofence.Latitude = fakeLatitude + 1
+	geofence.Longitude = fakeLongitude + 1
+
+	httpmock.ActivateNonDefault(geofence.FreeGeoIPClient.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	// mock json rsponse
+	response := &FreeGeoIPResponse{
+		IP:          fakeIPAddress,
+		CountryCode: "US",
+		CountryName: "United States",
+		TimeZone:    "America/Chicago",
+		Latitude:    fakeLatitude,
+		Longitude:   fakeLongitude,
+	}
+
+	// mock freegeoip.app response
+	httpmock.RegisterResponder("GET", fakeEndpoint,
+		func(req *http.Request) (*http.Response, error) {
+			resp, err := httpmock.NewJsonResponse(200, response)
+			if err != nil {
+				return httpmock.NewStringResponse(500, ""), nil
+			}
+			return resp, nil
+		})
+
+	isAddressNearby, err := geofence.IsIPAddressNear(fakeIPAddress)
+	assert.NoError(t, err)
+	assert.False(t, isAddressNearby)
 }

@@ -25,21 +25,24 @@ import (
 )
 
 func main() {
-	// Empty string to geofence your current public IP address, or you can monitor a remote address by supplying it as the first parameter
-	// freegeoip.app API token
-	// Sensitivity
-	// 0 - 111 km
-	// 1 - 11.1 km
-	// 2 - 1.11 km
-	// 3 111 meters
-	// 4 11.1 meters
-	// 5 1.11 meters
-	geofence, err := geofence.New("", "YOUR_FREEGEOIP_API_TOKEN", 3)
+	geofence, err := geofence.New(&geofence.Config{
+		// Empty string to geofence your current public IP address, or you can monitor a remote address by supplying it as the first parameter
+		IPAddress: "",
+		// freegeoip.app API token
+		Token: "YOUR_FREEGEOIP_API_TOKEN",
+		// Sensitivity
+		// 0 - 111 km
+		// 1 - 11.1 km
+		// 2 - 1.11 km
+		// 3 111 meters
+		// 4 11.1 meters
+		// 5 1.11 meters
+		Sensitivity: 3,                    // 3 is recommended
+		CacheTTL:    7 * (24 * time.Hour), // 1 week
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Create cache that holds status in memory until application is restarted
-	geofence.CreateCache(-1)
 	isAddressNearby, err := geofence.IsIPAddressNear("8.8.8.8")
 	if err != nil {
 		log.Fatal(err)
@@ -67,12 +70,25 @@ import (
 func main() {
 	// Provide an IP Address to test with
 	ipAddress := "192.168.1.100"
-	geofence, err := geofence.New("", "YOUR_FREEGEOIP_API_TOKEN", 3)
+	geofence, err := geofence.New(&geofence.Config{
+		// Empty string to geofence your current public IP address, or you can monitor a remote address by supplying it as the first parameter
+		IPAddress: ipAddress,
+		// freegeoip.app API token
+		Token: "YOUR_FREEGEOIP_API_TOKEN",
+		// Sensitivity
+		// 0 - 111 km
+		// 1 - 11.1 km
+		// 2 - 1.11 km
+		// 3 111 meters
+		// 4 11.1 meters
+		// 5 1.11 meters
+		Sensitivity: 3,                    // 3 is recommended
+		CacheTTL:    7 * (24 * time.Hour), // 1 week
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Create cache that holds status in memory until application is restarted
-	geofence.CreateCache(-1)
+	// Skip Private IP analysis as it will always be false
 	if !strings.HasPrefix(ipAddress, "192.") && !strings.HasPrefix(ipAddress, "172.") && !strings.HasPrefix(ipAddress, "10.") {
 		isAddressNearby, err := geofence.IsIPAddressNear(ipAddress)
 		if err != nil {
