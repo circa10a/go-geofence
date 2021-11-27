@@ -180,9 +180,17 @@ func TestGeofenceNear(t *testing.T) {
 			return resp, nil
 		})
 
+	// check that addresses is nearby
 	isAddressNearby, err := geofence.IsIPAddressNear(fakeIPAddress)
 	assert.NoError(t, err)
 	assert.True(t, isAddressNearby)
+
+	// get count info
+	httpmock.GetTotalCallCount()
+	// get the amount of calls for the registered responder
+	info := httpmock.GetCallCountInfo()
+	// Check total calls
+	assert.Equal(t, info[fmt.Sprintf("GET %s", fakeEndpoint)], 1)
 }
 
 func TestGeofenceNotNear(t *testing.T) {
@@ -225,7 +233,15 @@ func TestGeofenceNotNear(t *testing.T) {
 			return resp, nil
 		})
 
+	// check that addresses is not nearby
 	isAddressNearby, err := geofence.IsIPAddressNear(fakeIPAddress)
 	assert.NoError(t, err)
 	assert.False(t, isAddressNearby)
+
+	// get count info
+	httpmock.GetTotalCallCount()
+	// get the amount of calls for the registered responder
+	info := httpmock.GetCallCountInfo()
+	// Check total calls
+	assert.Equal(t, info[fmt.Sprintf("GET %s", fakeEndpoint)], 1)
 }
