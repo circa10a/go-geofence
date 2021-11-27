@@ -20,6 +20,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/circa10a/go-geofence"
 )
@@ -63,6 +64,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/circa10a/go-geofence"
 )
