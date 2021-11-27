@@ -127,6 +127,14 @@ func TestValidateIPAddress(t *testing.T) {
 			Input:    "8.8.88",
 			Expected: &ErrInvalidIPAddress{},
 		},
+		{
+			Input:    "2001:db8:3333:4444:5555:6666:7777:8888",
+			Expected: nil,
+		},
+		{
+			Input:    "2001:db8:3333:4444:5555:6666:7777:88888",
+			Expected: &ErrInvalidIPAddress{},
+		},
 	}
 	for _, test := range tests {
 		actual := validateIPAddress(test.Input)
