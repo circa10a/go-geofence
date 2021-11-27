@@ -12,7 +12,7 @@ import (
 const (
 	freeGeoIPBaseURL                = "https://api.freegeoip.app/json"
 	invalidSensitivityErrString     = "invalid sensitivity. value must be between 0 - 5"
-	invalidIPAddressString          = "invalid IPv4 address provided"
+	invalidIPAddressString          = "invalid IP address provided"
 	deleteExpiredCacheItemsInternal = 10 * time.Minute
 )
 
