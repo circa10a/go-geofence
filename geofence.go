@@ -85,7 +85,7 @@ func validateSensitivity(sensitivity int) error {
 	return nil
 }
 
-// validateIPAddress ensures valid ipv4 address
+// validateIPAddress ensures valid ip address
 func validateIPAddress(ipAddress string) error {
 	ipAddressErr := &ErrInvalidIPAddress{
 		msg: invalidIPAddressString,
