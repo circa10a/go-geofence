@@ -8,7 +8,7 @@ A small library to detect if an IP address is close to yours or another of your 
 
 ## Usage
 
-First you will need a free API Token from [freegeoip.app]https://freegeoip.app/)
+First you will need a free API Token from [freegeoip.app](https://freegeoip.app/)
 
 ```bash
 go get github.com/circa10a/go-geofence
