@@ -1,27 +1,26 @@
 package geofence
 
 import (
-	"fmt"
 	"net"
 	"time"
 
+	"github.com/EpicStep/go-simple-geo/v2/geo"
 	"github.com/go-resty/resty/v2"
 	"github.com/patrickmn/go-cache"
 )
 
 const (
 	freeGeoIPBaseURL                = "https://api.freegeoip.app/json"
-	invalidSensitivityErrString     = "invalid sensitivity. value must be between 0 - 5"
 	invalidIPAddressString          = "invalid IP address provided"
 	deleteExpiredCacheItemsInternal = 10 * time.Minute
 )
 
 // Config holds the user configuration to setup a new geofence
 type Config struct {
-	IPAddress   string
-	Token       string
-	Sensitivity int
-	CacheTTL    time.Duration
+	IPAddress string
+	Token     string
+	Radius    float64
+	CacheTTL  time.Duration
 }
 
 // Geofence holds a freegeoip.app client, cache and user supplied config
@@ -57,15 +56,6 @@ func (e *FreeGeoIPError) Error() string {
 	return e.Message
 }
 
-// ErrInvalidSensitivity is the error raised when sensitivity is less than 0 or more than 5
-type ErrInvalidSensitivity struct {
-	msg string
-}
-
-func (e *ErrInvalidSensitivity) Error() string {
-	return e.msg
-}
-
 // ErrInvalidIPAddress is the error raised when an invalid IP address is provided
 type ErrInvalidIPAddress struct {
 	msg string
@@ -73,16 +63,6 @@ type ErrInvalidIPAddress struct {
 
 func (e *ErrInvalidIPAddress) Error() string {
 	return e.msg
-}
-
-// validateSensitivity ensures valid value between 0 - 5
-func validateSensitivity(sensitivity int) error {
-	if sensitivity < 0 || sensitivity > 5 {
-		return &ErrInvalidSensitivity{
-			msg: invalidSensitivityErrString,
-		}
-	}
-	return nil
 }
 
 // validateIPAddress ensures valid ip address
@@ -119,22 +99,9 @@ func (g *Geofence) getIPGeoData(ipAddress string) (*FreeGeoIPResponse, error) {
 // New creates a new geofence for the IP address specified.
 // Use "" as the ip address to geofence the machine your application is running on
 // Token comes from https://freegeoip.app/
-// Sensitivity is for proximity:
-// 0 - 111 km
-// 1 - 11.1 km
-// 2 - 1.11 km
-// 3 111 meters
-// 4 11.1 meters
-// 5 1.11 meters
 func New(c *Config) (*Geofence, error) {
 	// Create new client for freegeoip.app
 	freeGeoIPClient := resty.New().SetBaseURL(freeGeoIPBaseURL)
-
-	// Ensure sensitivity is between 1 - 5
-	err := validateSensitivity(c.Sensitivity)
-	if err != nil {
-		return nil, err
-	}
 
 	// New Geofence object
 	geofence := &Geofence{
@@ -158,11 +125,6 @@ func New(c *Config) (*Geofence, error) {
 	return geofence, nil
 }
 
-// formatCoordinates converts decimal points to size of sensitivity and givens back a string for comparison
-func formatCoordinates(sensitivity int, location float64) string {
-	return fmt.Sprintf("%*.*f", 0, sensitivity, location)
-}
-
 // IsIPAddressNear returns true if the specified address is within proximity
 func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	// Ensure IP is valid first
@@ -183,13 +145,15 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	}
 
 	// Format our IP coordinates and the clients
-	currentLat := formatCoordinates(g.Sensitivity, g.Latitude)
-	currentLong := formatCoordinates(g.Sensitivity, g.Longitude)
-	clientLat := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Latitude)
-	clientLong := formatCoordinates(g.Sensitivity, ipAddressLookupDetails.Longitude)
+	currentCoordinates := geo.NewCoordinatesFromDegrees(g.Latitude, g.Longitude)
+	clientCoordinates := geo.NewCoordinatesFromDegrees(ipAddressLookupDetails.Latitude, ipAddressLookupDetails.Longitude)
+
+	// Get distance in kilometers
+	distance := currentCoordinates.Distance(clientCoordinates)
 
 	// Compare coordinates
-	isNear := currentLat == clientLat && currentLong == clientLong
+	// distance must be less than or equal to the configured radius to be near
+	isNear := distance <= g.Radius
 
 	// Insert ip address and it's status into the cache if user instantiated a cache
 	g.Cache.Set(ipAddress, isNear, cache.DefaultExpiration)

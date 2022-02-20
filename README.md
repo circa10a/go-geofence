@@ -31,15 +31,11 @@ func main() {
 		IPAddress: "",
 		// freegeoip.app API token
 		Token: "YOUR_FREEGEOIP_API_TOKEN",
-		// Sensitivity
-		// 0 - 111 km
-		// 1 - 11.1 km
-		// 2 - 1.11 km
-		// 3 111 meters
-		// 4 11.1 meters
-		// 5 1.11 meters
-		Sensitivity: 3,                    // 3 is recommended
-		CacheTTL:    7 * (24 * time.Hour), // 1 week
+		// Maximum radius of the geofence in kilometers, only clients less than or equal to this distance will return true with isAddressNearby
+		// 1 kilometer
+		Radius: 1.0,
+		// How long to cache if any ip address is nearby
+		CacheTTL: 7 * (24 * time.Hour), // 1 week
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -77,15 +73,11 @@ func main() {
 		IPAddress: ipAddress,
 		// freegeoip.app API token
 		Token: "YOUR_FREEGEOIP_API_TOKEN",
-		// Sensitivity
-		// 0 - 111 km
-		// 1 - 11.1 km
-		// 2 - 1.11 km
-		// 3 111 meters
-		// 4 11.1 meters
-		// 5 1.11 meters
-		Sensitivity: 3,                    // 3 is recommended
-		CacheTTL:    7 * (24 * time.Hour), // 1 week
+		// Maximum radius of the geofence in kilometers, only clients less than or equal to this distance will return true with isAddressNearby
+		// 1 kilometer
+		Radius: 1.0,
+		// How long to cache if any ip address is nearby
+		CacheTTL: 7 * (24 * time.Hour), // 1 week
 	})
 	if err != nil {
 		log.Fatal(err)

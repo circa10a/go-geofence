@@ -11,108 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFormatCoordinates(t *testing.T) {
-	type test struct {
-		Expected    string
-		Sensitivity int
-		Input       float64
-	}
-	tests := []test{
-		{
-			Input:       -31.12345,
-			Expected:    "-31.12345",
-			Sensitivity: 5,
-		},
-		{
-			Input:       -31.12345,
-			Expected:    "-31.1234",
-			Sensitivity: 4,
-		},
-		{
-			Input:       -31.12345,
-			Expected:    "-31.123",
-			Sensitivity: 3,
-		},
-		{
-			Input:       -31.12345,
-			Expected:    "-31.123",
-			Sensitivity: 3,
-		},
-		{
-			Input:       -31.12345,
-			Expected:    "-31.12",
-			Sensitivity: 2,
-		},
-		{
-			Input:       -31.12345,
-			Expected:    "-31.1",
-			Sensitivity: 1,
-		},
-		{
-			Input:       -31.12345,
-			Expected:    "-31",
-			Sensitivity: 0,
-		},
-	}
-	for _, test := range tests {
-		actual := formatCoordinates(test.Sensitivity, test.Input)
-		if test.Expected != actual {
-			t.Fail()
-		}
-	}
-}
-
-func TestValidateSensitivity(t *testing.T) {
-	type test struct {
-		Expected error
-		Input    int
-	}
-	tests := []test{
-		{
-			Input:    6,
-			Expected: &ErrInvalidSensitivity{},
-		},
-		{
-			Input:    5,
-			Expected: nil,
-		},
-		{
-			Input:    4,
-			Expected: nil,
-		},
-		{
-			Input:    3,
-			Expected: nil,
-		},
-		{
-			Input:    2,
-			Expected: nil,
-		},
-		{
-			Input:    1,
-			Expected: nil,
-		},
-		{
-			Input:    0,
-			Expected: nil,
-		},
-		{
-			Input:    -1,
-			Expected: &ErrInvalidSensitivity{},
-		},
-	}
-	for _, test := range tests {
-		actual := validateSensitivity(test.Input)
-		if test.Expected != nil {
-			assert.EqualErrorf(t, actual, invalidSensitivityErrString, "Error should be: %v, got: %v", invalidSensitivityErrString, actual)
-		} else {
-			if !errors.Is(actual, test.Expected) {
-				t.Fail()
-			}
-		}
-	}
-}
-
 func TestValidateIPAddress(t *testing.T) {
 	type test struct {
 		Expected error
@@ -153,14 +51,15 @@ func TestGeofenceNear(t *testing.T) {
 	fakeApiToken := "fakeApiToken"
 	fakeLatitude := 37.751
 	fakeLongitude := -97.822
+	fakeRadius := 0.0
 	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
 
 	// new geofence
 	geofence, _ := New(&Config{
-		IPAddress:   fakeIPAddress,
-		Token:       fakeApiToken,
-		Sensitivity: 3,                    // 3 is recommended
-		CacheTTL:    7 * (24 * time.Hour), // 1 week
+		IPAddress: fakeIPAddress,
+		Token:     fakeApiToken,
+		Radius:    fakeRadius,
+		CacheTTL:  7 * (24 * time.Hour), // 1 week
 	})
 	geofence.Latitude = fakeLatitude
 	geofence.Longitude = fakeLongitude
@@ -206,14 +105,15 @@ func TestGeofenceNotNear(t *testing.T) {
 	fakeApiToken := "fakeApiToken"
 	fakeLatitude := 37.751
 	fakeLongitude := -98.822
+	fakeRadius := 0.0
 	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
 
 	// new geofence
 	geofence, _ := New(&Config{
-		IPAddress:   fakeIPAddress,
-		Token:       fakeApiToken,
-		Sensitivity: 3,                    // 3 is recommended
-		CacheTTL:    7 * (24 * time.Hour), // 1 week
+		IPAddress: fakeIPAddress,
+		Token:     fakeApiToken,
+		Radius:    fakeRadius,
+		CacheTTL:  7 * (24 * time.Hour), // 1 week
 	})
 	geofence.Latitude = fakeLatitude + 1
 	geofence.Longitude = fakeLongitude + 1
