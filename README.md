@@ -59,6 +59,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"strings"
 	"time"
 
@@ -83,7 +84,8 @@ func main() {
 		log.Fatal(err)
 	}
 	// Skip Private IP analysis as it will always be false
-	if !strings.HasPrefix(ipAddress, "192.") && !strings.HasPrefix(ipAddress, "172.") && !strings.HasPrefix(ipAddress, "10.") {
+	ip := net.ParseIP(ipAddress)
+	if !ip.IsPrivate() || !strings.HasPrefix(ipAddress, "::1") {
 		isAddressNearby, err := geofence.IsIPAddressNear(ipAddress)
 		if err != nil {
 			log.Fatal(err)
