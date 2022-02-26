@@ -1,6 +1,7 @@
 package geofence
 
 import (
+	"fmt"
 	"net"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 
 const (
 	freeGeoIPBaseURL                = "https://api.freegeoip.app/json"
-	invalidIPAddressString          = "invalid IP address provided"
 	deleteExpiredCacheItemsInternal = 10 * time.Minute
 )
 
@@ -57,21 +57,12 @@ func (e *FreeGeoIPError) Error() string {
 }
 
 // ErrInvalidIPAddress is the error raised when an invalid IP address is provided
-type ErrInvalidIPAddress struct {
-	msg string
-}
-
-func (e *ErrInvalidIPAddress) Error() string {
-	return e.msg
-}
+var ErrInvalidIPAddress = fmt.Errorf("invalid IP address provided")
 
 // validateIPAddress ensures valid ip address
 func validateIPAddress(ipAddress string) error {
-	ipAddressErr := &ErrInvalidIPAddress{
-		msg: invalidIPAddressString,
-	}
 	if net.ParseIP(ipAddress) == nil {
-		return ipAddressErr
+		return ErrInvalidIPAddress
 	}
 	return nil
 }

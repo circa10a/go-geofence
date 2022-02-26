@@ -12,34 +12,33 @@ import (
 )
 
 func TestValidateIPAddress(t *testing.T) {
-	type test struct {
-		Expected error
-		Input    string
-	}
-	tests := []test{
+	tests := []struct {
+		expected error
+		input    string
+	}{
 		{
-			Input:    "8.8.8.8",
-			Expected: nil,
+			input:    "8.8.8.8",
+			expected: nil,
 		},
 		{
-			Input:    "8.8.88",
-			Expected: &ErrInvalidIPAddress{},
+			input:    "8.8.88",
+			expected: ErrInvalidIPAddress,
 		},
 		{
-			Input:    "2001:db8:3333:4444:5555:6666:7777:8888",
-			Expected: nil,
+			input:    "2001:db8:3333:4444:5555:6666:7777:8888",
+			expected: nil,
 		},
 		{
-			Input:    "2001:db8:3333:4444:5555:6666:7777:88888",
-			Expected: &ErrInvalidIPAddress{},
+			input:    "2001:db8:3333:4444:5555:6666:7777:88888",
+			expected: ErrInvalidIPAddress,
 		},
 	}
 	for _, test := range tests {
-		actual := validateIPAddress(test.Input)
-		if test.Expected != nil {
-			assert.EqualErrorf(t, actual, invalidIPAddressString, "Error should be: %v, got: %v", invalidIPAddressString, actual)
+		actual := validateIPAddress(test.input)
+		if test.expected != nil {
+			assert.ErrorIs(t, actual, test.expected)
 		} else {
-			if !errors.Is(actual, test.Expected) {
+			if !errors.Is(actual, test.expected) {
 				t.Fail()
 			}
 		}
