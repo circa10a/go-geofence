@@ -17,10 +17,11 @@ const (
 
 // Config holds the user configuration to setup a new geofence
 type Config struct {
-	IPAddress string
-	Token     string
-	Radius    float64
-	CacheTTL  time.Duration
+	IPAddress               string
+	Token                   string
+	Radius                  float64
+	AllowPrivateIPAddresses bool
+	CacheTTL                time.Duration
 }
 
 // Geofence holds a freegeoip.app client, cache and user supplied config
@@ -122,6 +123,13 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	err := validateIPAddress(ipAddress)
 	if err != nil {
 		return false, err
+	}
+
+	if g.AllowPrivateIPAddresses {
+		ip := net.ParseIP(ipAddress)
+		if ip.IsPrivate() || ip.IsLoopback() {
+			return true, nil
+		}
 	}
 
 	// Check if ipaddress has been looked up before and is in cache

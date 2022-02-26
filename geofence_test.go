@@ -99,6 +99,61 @@ func TestGeofenceNear(t *testing.T) {
 	assert.Equal(t, info[fmt.Sprintf("GET %s", fakeEndpoint)], 1)
 }
 
+func TestGeofencePrivateIP(t *testing.T) {
+	fakeIPAddress := "192.168.1.1"
+	fakeApiToken := "fakeApiToken"
+	fakeLatitude := 37.751
+	fakeLongitude := -97.822
+	fakeRadius := 0.0
+	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
+
+	// new geofence
+	geofence, _ := New(&Config{
+		IPAddress:               fakeIPAddress,
+		Token:                   fakeApiToken,
+		Radius:                  fakeRadius,
+		AllowPrivateIPAddresses: true,
+		CacheTTL:                7 * (24 * time.Hour), // 1 week
+	})
+	geofence.Latitude = fakeLatitude
+	geofence.Longitude = fakeLongitude
+
+	httpmock.ActivateNonDefault(geofence.FreeGeoIPClient.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	// mock json rsponse
+	response := &FreeGeoIPResponse{
+		IP:          fakeIPAddress,
+		CountryCode: "US",
+		CountryName: "United States",
+		TimeZone:    "America/Chicago",
+		Latitude:    fakeLatitude,
+		Longitude:   fakeLongitude,
+	}
+
+	// mock freegeoip.app response
+	httpmock.RegisterResponder("GET", fakeEndpoint,
+		func(req *http.Request) (*http.Response, error) {
+			resp, err := httpmock.NewJsonResponse(200, response)
+			if err != nil {
+				return httpmock.NewStringResponse(500, ""), nil
+			}
+			return resp, nil
+		})
+
+	// check that addresses is nearby
+	isAddressNearby, err := geofence.IsIPAddressNear(fakeIPAddress)
+	assert.NoError(t, err)
+	assert.True(t, isAddressNearby)
+
+	// get count info
+	httpmock.GetTotalCallCount()
+	// get the amount of calls for the registered responder
+	info := httpmock.GetCallCountInfo()
+	// Check total calls
+	assert.Equal(t, info[fmt.Sprintf("GET %s", fakeEndpoint)], 0)
+}
+
 func TestGeofenceNotNear(t *testing.T) {
 	fakeIPAddress := "8.8.8.8"
 	fakeApiToken := "fakeApiToken"
