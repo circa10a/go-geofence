@@ -84,7 +84,7 @@ func main() {
 	}
 	// Skip Private IP analysis as it will always be false
 	ip := net.ParseIP(ipAddress)
-	if !ip.IsPrivate() || ip.IsLoopback() {
+	if !ip.IsPrivate() || !ip.IsLoopback() {
 		isAddressNearby, err := geofence.IsIPAddressNear(ipAddress)
 		if err != nil {
 			log.Fatal(err)
