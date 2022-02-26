@@ -60,7 +60,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/circa10a/go-geofence"
@@ -85,7 +84,7 @@ func main() {
 	}
 	// Skip Private IP analysis as it will always be false
 	ip := net.ParseIP(ipAddress)
-	if !ip.IsPrivate() || !strings.HasPrefix(ipAddress, "::1") {
+	if !ip.IsPrivate() || ip.IsLoopback() {
 		isAddressNearby, err := geofence.IsIPAddressNear(ipAddress)
 		if err != nil {
 			log.Fatal(err)
