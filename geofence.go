@@ -70,19 +70,22 @@ func validateIPAddress(ipAddress string) error {
 
 // getIPGeoData fetches geolocation data for specified IP address from https://freegeoip.app
 func (g *Geofence) getIPGeoData(ipAddress string) (*FreeGeoIPResponse, error) {
+	freeGeoIPResponse := &FreeGeoIPResponse{}
+	freeGeoIPError := &FreeGeoIPError{}
+
 	resp, err := g.FreeGeoIPClient.R().
 		SetHeader("Accept", "application/json").
 		SetQueryParam("apikey", g.Token).
-		SetResult(&FreeGeoIPResponse{}).
-		SetError(&FreeGeoIPError{}).
+		SetResult(freeGeoIPResponse).
+		SetError(freeGeoIPError).
 		Get(ipAddress)
 	if err != nil {
-		return &FreeGeoIPResponse{}, err
+		return freeGeoIPResponse, err
 	}
 
 	// If api gives back status code >399, report error to user
 	if resp.IsError() {
-		return &FreeGeoIPResponse{}, resp.Error().(*FreeGeoIPError)
+		return freeGeoIPResponse, freeGeoIPError
 	}
 
 	return resp.Result().(*FreeGeoIPResponse), nil
