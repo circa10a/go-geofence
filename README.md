@@ -4,11 +4,11 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/circa10a/go-geofence)](https://pkg.go.dev/github.com/circa10a/go-geofence?tab=overview)
 [![Go Report Card](https://goreportcard.com/badge/github.com/circa10a/go-geofence)](https://goreportcard.com/report/github.com/circa10a/go-geofence)
 
-A small library to detect if an IP address is close to yours or another of your choosing using https://freegeoip.app/
+A small library to detect if an IP address is close to yours or another of your choosing using https://ipbase.com/
 
 ## Usage
 
-First you will need a free API Token from [freegeoip.app](https://freegeoip.app/)
+First you will need a free API Token from [ipbase.com](https://ipbase.com/)
 
 ```bash
 go get github.com/circa10a/go-geofence
@@ -29,8 +29,8 @@ func main() {
 	geofence, err := geofence.New(&geofence.Config{
 		// Empty string to geofence your current public IP address, or you can monitor a remote address by supplying it as the first parameter
 		IPAddress: "",
-		// freegeoip.app API token
-		Token: "YOUR_FREEGEOIP_API_TOKEN",
+		// ipbase.com API token
+		Token: "YOUR_IPBASE_API_TOKEN",
 		// Maximum radius of the geofence in kilometers, only clients less than or equal to this distance will return true with isAddressNearby
 		// 1 kilometer
 		Radius: 1.0,

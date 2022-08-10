@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	endpointStrTemplate = "%s/info?apikey=%s&ip=%s"
+)
+
 func TestValidateIPAddress(t *testing.T) {
 	tests := []struct {
 		expected error
@@ -51,7 +55,7 @@ func TestGeofenceNear(t *testing.T) {
 	fakeLatitude := 37.751
 	fakeLongitude := -97.822
 	fakeRadius := 0.0
-	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
+	fakeEndpoint := fmt.Sprintf(endpointStrTemplate, ipBaseBaseURL, fakeApiToken, fakeIPAddress)
 
 	// new geofence
 	geofence, _ := New(&Config{
@@ -63,17 +67,25 @@ func TestGeofenceNear(t *testing.T) {
 	geofence.Latitude = fakeLatitude
 	geofence.Longitude = fakeLongitude
 
-	httpmock.ActivateNonDefault(geofence.FreeGeoIPClient.GetClient())
+	httpmock.ActivateNonDefault(geofence.IPBaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	// mock json rsponse
-	response := &FreeGeoIPResponse{
-		IP:          fakeIPAddress,
-		CountryCode: "US",
-		CountryName: "United States",
-		TimeZone:    "America/Chicago",
-		Latitude:    fakeLatitude,
-		Longitude:   fakeLongitude,
+	response := &ipBaseResponse{
+		Data: data{
+			IP: fakeIPAddress,
+			Location: location{
+				Latitude:  fakeLatitude,
+				Longitude: fakeLongitude,
+				Country: country{
+					Ioc:  "USA",
+					Name: "United States",
+				},
+			},
+			Timezone: timezone{
+				Id: "America/Chicago",
+			},
+		},
 	}
 
 	// mock freegeoip.app response
@@ -105,7 +117,7 @@ func TestGeofencePrivateIP(t *testing.T) {
 	fakeLatitude := 37.751
 	fakeLongitude := -97.822
 	fakeRadius := 0.0
-	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
+	fakeEndpoint := fmt.Sprintf(endpointStrTemplate, ipBaseBaseURL, fakeApiToken, fakeIPAddress)
 
 	// new geofence
 	geofence, _ := New(&Config{
@@ -118,17 +130,25 @@ func TestGeofencePrivateIP(t *testing.T) {
 	geofence.Latitude = fakeLatitude
 	geofence.Longitude = fakeLongitude
 
-	httpmock.ActivateNonDefault(geofence.FreeGeoIPClient.GetClient())
+	httpmock.ActivateNonDefault(geofence.IPBaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	// mock json rsponse
-	response := &FreeGeoIPResponse{
-		IP:          fakeIPAddress,
-		CountryCode: "US",
-		CountryName: "United States",
-		TimeZone:    "America/Chicago",
-		Latitude:    fakeLatitude,
-		Longitude:   fakeLongitude,
+	response := &ipBaseResponse{
+		Data: data{
+			IP: fakeIPAddress,
+			Location: location{
+				Latitude:  fakeLatitude,
+				Longitude: fakeLongitude,
+				Country: country{
+					Ioc:  "USA",
+					Name: "United States",
+				},
+			},
+			Timezone: timezone{
+				Id: "America/Chicago",
+			},
+		},
 	}
 
 	// mock freegeoip.app response
@@ -160,7 +180,7 @@ func TestGeofenceNotNear(t *testing.T) {
 	fakeLatitude := 37.751
 	fakeLongitude := -98.822
 	fakeRadius := 0.0
-	fakeEndpoint := fmt.Sprintf("%s/%s?apikey=%s", freeGeoIPBaseURL, fakeIPAddress, fakeApiToken)
+	fakeEndpoint := fmt.Sprintf(endpointStrTemplate, ipBaseBaseURL, fakeApiToken, fakeIPAddress)
 
 	// new geofence
 	geofence, _ := New(&Config{
@@ -172,17 +192,25 @@ func TestGeofenceNotNear(t *testing.T) {
 	geofence.Latitude = fakeLatitude + 1
 	geofence.Longitude = fakeLongitude + 1
 
-	httpmock.ActivateNonDefault(geofence.FreeGeoIPClient.GetClient())
+	httpmock.ActivateNonDefault(geofence.IPBaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	// mock json rsponse
-	response := &FreeGeoIPResponse{
-		IP:          fakeIPAddress,
-		CountryCode: "US",
-		CountryName: "United States",
-		TimeZone:    "America/Chicago",
-		Latitude:    fakeLatitude,
-		Longitude:   fakeLongitude,
+	response := &ipBaseResponse{
+		Data: data{
+			IP: fakeIPAddress,
+			Location: location{
+				Latitude:  fakeLatitude,
+				Longitude: fakeLongitude,
+				Country: country{
+					Ioc:  "USA",
+					Name: "United States",
+				},
+			},
+			Timezone: timezone{
+				Id: "America/Chicago",
+			},
+		},
 	}
 
 	// mock freegeoip.app response
