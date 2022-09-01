@@ -67,11 +67,11 @@ func TestGeofenceNear(t *testing.T) {
 	geofence.Latitude = fakeLatitude
 	geofence.Longitude = fakeLongitude
 
-	httpmock.ActivateNonDefault(geofence.IPBaseClient.GetClient())
+	httpmock.ActivateNonDefault(geofence.ipbaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	// mock json rsponse
-	response := &ipBaseResponse{
+	response := &ipbaseResponse{
 		Data: data{
 			IP: fakeIPAddress,
 			Location: location{
@@ -130,11 +130,11 @@ func TestGeofencePrivateIP(t *testing.T) {
 	geofence.Latitude = fakeLatitude
 	geofence.Longitude = fakeLongitude
 
-	httpmock.ActivateNonDefault(geofence.IPBaseClient.GetClient())
+	httpmock.ActivateNonDefault(geofence.ipbaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	// mock json rsponse
-	response := &ipBaseResponse{
+	response := &ipbaseResponse{
 		Data: data{
 			IP: fakeIPAddress,
 			Location: location{
@@ -192,11 +192,11 @@ func TestGeofenceNotNear(t *testing.T) {
 	geofence.Latitude = fakeLatitude + 1
 	geofence.Longitude = fakeLongitude + 1
 
-	httpmock.ActivateNonDefault(geofence.IPBaseClient.GetClient())
+	httpmock.ActivateNonDefault(geofence.ipbaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	// mock json rsponse
-	response := &ipBaseResponse{
+	response := &ipbaseResponse{
 		Data: data{
 			IP: fakeIPAddress,
 			Location: location{
