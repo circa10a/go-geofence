@@ -61,7 +61,7 @@ By default, the library will use an in-memory cache that will be used to reduce 
 
 ### Persistent
 
-If you need a persistent cache to live outside of your application, [Redis](https://redis.io/) is supported by this library. To have the library cache addres proximity using a Redis instance, simply provide a `redis.RedisOptions` struct to `geofence.Config.RedisOptions`. If `RedisOptions` is configured, the in-memory cache will not be used.
+If you need a persistent cache to live outside of your application, [Redis](https://redis.io/) is supported by this library. To have the library cache address proximity using a Redis instance, simply provide a `redis.RedisOptions` struct to `geofence.Config.RedisOptions`. If `RedisOptions` is configured, the in-memory cache will not be used.
 
 > Note: Only Redis 7 is currently supported at the time of this writing.
 
