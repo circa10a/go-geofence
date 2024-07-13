@@ -13,8 +13,6 @@ import (
 
 const (
 	ipBaseBaseURL = "https://api.ipbase.com/v2"
-	// For in-memory cache
-	deleteExpiredCacheItemsInternal = 10 * time.Minute
 )
 
 // Config holds the user configuration to setup a new geofence
@@ -181,9 +179,12 @@ func New(c *Config) (*Geofence, error) {
 	}
 
 	// Set up redis client if options are provided
-	// Else we create a local in-memory cache
+	// else we create a local in-memory cache
 	if c.RedisOptions != nil {
 		c.RedisOptions.TTL = c.CacheTTL
+		if c.CacheTTL < 0 {
+			c.RedisOptions.TTL = 0
+		}
 		geofence.cache = cache.NewRedisCache(c.RedisOptions)
 	} else {
 		geofence.cache = cache.NewMemoryCache(&cache.MemoryOptions{
@@ -193,7 +194,7 @@ func New(c *Config) (*Geofence, error) {
 
 	// Get current location of specified IP address
 	// If empty string, use public IP of device running this
-	// Or use location of the specified IP
+	// or use location of the specified IP
 	ipAddressLookupDetails, err := geofence.getIPGeoData(c.IPAddress)
 	if err != nil {
 		return geofence, err
@@ -226,6 +227,7 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	if found {
 		return isIPAddressNear, nil
 	}
