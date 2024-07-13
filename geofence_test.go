@@ -70,7 +70,7 @@ func TestGeofenceNear(t *testing.T) {
 	httpmock.ActivateNonDefault(geofence.ipbaseClient.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	// mock json rsponse
+	// mock json response
 	response := &ipbaseResponse{
 		Data: data{
 			IP: fakeIPAddress,
@@ -83,7 +83,7 @@ func TestGeofenceNear(t *testing.T) {
 				},
 			},
 			Timezone: timezone{
-				Id: "America/Chicago",
+				ID: "America/Chicago",
 			},
 		},
 	}
@@ -146,7 +146,7 @@ func TestGeofencePrivateIP(t *testing.T) {
 				},
 			},
 			Timezone: timezone{
-				Id: "America/Chicago",
+				ID: "America/Chicago",
 			},
 		},
 	}
@@ -208,7 +208,7 @@ func TestGeofenceNotNear(t *testing.T) {
 				},
 			},
 			Timezone: timezone{
-				Id: "America/Chicago",
+				ID: "America/Chicago",
 			},
 		},
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// RedisCache is used to store/fetch ip proximity from redis.
 type RedisCache struct {
 	redisClient  *redis.Client
 	redisOptions *RedisOptions
@@ -21,6 +22,7 @@ type RedisOptions struct {
 	TTL      time.Duration
 }
 
+// NewRedisCache provides a new redis cache client.
 func NewRedisCache(redisOpts *RedisOptions) *RedisCache {
 	return &RedisCache{
 		redisClient: redis.NewClient(&redis.Options{
@@ -32,6 +34,7 @@ func NewRedisCache(redisOpts *RedisOptions) *RedisCache {
 	}
 }
 
+// Get gets value from redis.
 func (r *RedisCache) Get(ctx context.Context, key string) (bool, bool, error) {
 	val, err := r.redisClient.Get(ctx, key).Result()
 	if err != nil {
@@ -49,7 +52,8 @@ func (r *RedisCache) Get(ctx context.Context, key string) (bool, bool, error) {
 	return isIPAddressNear, true, nil
 }
 
+// Set sets k/v in redis.
 func (r *RedisCache) Set(ctx context.Context, key string, value bool) error {
-	// Redis stores false as 0 for whatever reason, so we'll store as a string and parse out in cacheGet
+	// Redis stores false as 0 for whatever reason, so we'll store as a string and parse it out
 	return r.redisClient.Set(ctx, key, strconv.FormatBool(value), r.redisOptions.TTL).Err()
 }

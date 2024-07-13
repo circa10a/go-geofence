@@ -35,89 +35,9 @@ type Geofence struct {
 	Longitude    float64
 }
 
-// ipBaseResponse is the json response from ipbase.com
+// ipbaseResponse is the json response from ipbase.com
 type ipbaseResponse struct {
 	Data data `json:"data"`
-}
-
-type timezone struct {
-	Id              string `json:"id"`
-	CurrentTime     string `json:"current_time"`
-	Code            string `json:"code"`
-	IDaylightSaving bool   `json:"is_daylight_saving"`
-	GmtOffset       int    `json:"gmt_offset"`
-}
-
-type connection struct {
-	Organization string `json:"organization"`
-	Isp          string `json:"isp"`
-	Asn          int    `json:"asn"`
-}
-
-type continent struct {
-	Code           string `json:"code"`
-	Name           string `json:"name"`
-	NameTranslated string `json:"name_translated"`
-}
-
-type currencies struct {
-	Symbol        string `json:"symbol"`
-	Name          string `json:"name"`
-	SymbolNative  string `json:"symbol_native"`
-	Code          string `json:"code"`
-	NamePlural    string `json:"name_plural"`
-	DecimalDigits int    `json:"decimal_digits"`
-	Rounding      int    `json:"rounding"`
-}
-
-type languages struct {
-	Name       string `json:"name"`
-	NameNative string `json:"name_native"`
-}
-
-type country struct {
-	Alpha2            string       `json:"alpha2"`
-	Alpha3            string       `json:"alpha3"`
-	CallingCodes      []string     `json:"calling_codes"`
-	Currencies        []currencies `json:"currencies"`
-	Emoji             string       `json:"emoji"`
-	Ioc               string       `json:"ioc"`
-	Languages         []languages  `json:"languages"`
-	Name              string       `json:"name"`
-	NameTranslated    string       `json:"name_translated"`
-	Timezones         []string     `json:"timezones"`
-	IsInEuropeanUnion bool         `json:"is_in_european_union"`
-}
-
-type city struct {
-	Name           string `json:"name"`
-	NameTranslated string `json:"name_translated"`
-}
-
-type region struct {
-	Fips           interface{} `json:"fips"`
-	Alpha2         interface{} `json:"alpha2"`
-	Name           string      `json:"name"`
-	NameTranslated string      `json:"name_translated"`
-}
-
-type location struct {
-	GeonamesID interface{} `json:"geonames_id"`
-	Region     region      `json:"region"`
-	Continent  continent   `json:"continent"`
-	City       city        `json:"city"`
-	Zip        string      `json:"zip"`
-	Country    country     `json:"country"`
-	Latitude   float64     `json:"latitude"`
-	Longitude  float64     `json:"longitude"`
-}
-
-type data struct {
-	Timezone   timezone   `json:"timezone"`
-	IP         string     `json:"ip"`
-	Type       string     `json:"type"`
-	Connection connection `json:"connection"`
-	Location   location   `json:"location"`
 }
 
 // IPBaseError is the json response when there is an error from ipbase.com

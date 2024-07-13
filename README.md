@@ -61,7 +61,7 @@ By default, the library will use an in-memory cache that will be used to reduce 
 
 ### Persistent
 
-If you need a persistent cache to live outside of your application, [Redis](https://redis.io/) is supported by this library. To have the library cache address proximity using a Redis instance, simply provide a `geofence.RedisOptions` struct to `geofence.Config.RedisOptions`. If `RedisOptions` is configured, the in-memory cache will not be used.
+If you need a persistent cache to live outside of your application, [Redis](https://redis.io/) is supported by this library. To have the library cache address proximity using a Redis instance, simply provide a `RedisOptions` struct using the `cache` package to `geofence.Config.RedisOptions`. If `RedisOptions` is configured, the in-memory cache will not be used.
 
 > Note: Only Redis 7 is currently supported at the time of this writing.
 
@@ -76,7 +76,7 @@ import (
 	"time"
 
 	"github.com/circa10a/go-geofence"
-	"github.com/go-redis/redis/v9"
+	geofencecache "github.com/circa10a/go-geofence/cache"
 )
 
 func main() {
@@ -87,7 +87,7 @@ func main() {
 		AllowPrivateIPAddresses: true,
 		CacheTTL: 7 * (24 * time.Hour), // 1 week
 		// Use Redis for caching
-		RedisOptions: &geofence.RedisOptions{
+		RedisOptions: &geofencecache.RedisOptions{
 			Addr:     "localhost:6379",
 			Password: "", // no password set
 			DB:       0,  // use default DB
@@ -100,6 +100,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// Address nearby: false
 	fmt.Println("Address nearby: ", isAddressNearby)
 }

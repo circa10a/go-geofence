@@ -1,6 +1,6 @@
 module github.com/circa10a/go-geofence
 
-go 1.17
+go 1.18
 
 require (
 	github.com/EpicStep/go-simple-geo/v2 v2.0.1
