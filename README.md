@@ -89,6 +89,7 @@ func main() {
 		// Use Redis for caching
 		RedisOptions: &geofencecache.RedisOptions{
 			Addr:     "localhost:6379",
+			Username: "", // no username set
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		},

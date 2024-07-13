@@ -17,6 +17,7 @@ type RedisCache struct {
 // RedisOptions holds redis configuration parameters.
 type RedisOptions struct {
 	Addr     string
+	Username string
 	Password string
 	DB       int
 	TTL      time.Duration
@@ -27,6 +28,7 @@ func NewRedisCache(redisOpts *RedisOptions) *RedisCache {
 	return &RedisCache{
 		redisClient: redis.NewClient(&redis.Options{
 			Addr:     redisOpts.Addr,
+			Username: redisOpts.Username,
 			Password: redisOpts.Password,
 			DB:       redisOpts.DB,
 		}),
