@@ -1,15 +1,13 @@
 package geofence
 
 import (
-	"fmt"
+	"errors"
 	"net"
-	"strconv"
 	"time"
 
 	"github.com/EpicStep/go-simple-geo/v2/geo"
-	"github.com/go-redis/redis/v9"
+	"github.com/circa10a/go-geofence/cache"
 	"github.com/go-resty/resty/v2"
-	"github.com/patrickmn/go-cache"
 	"golang.org/x/net/context"
 )
 
@@ -21,7 +19,7 @@ const (
 
 // Config holds the user configuration to setup a new geofence
 type Config struct {
-	RedisOptions            *redis.Options
+	RedisOptions            *cache.RedisOptions
 	IPAddress               string
 	Token                   string
 	Radius                  float64
@@ -31,13 +29,12 @@ type Config struct {
 
 // Geofence holds a ipbase.com client, redis client, in-memory cache and user supplied config
 type Geofence struct {
-	cache        *cache.Cache
+	cache        cache.Cache
 	ipbaseClient *resty.Client
-	redisClient  *redis.Client
 	ctx          context.Context
-	Config
-	Latitude  float64
-	Longitude float64
+	Config       Config
+	Latitude     float64
+	Longitude    float64
 }
 
 // ipBaseResponse is the json response from ipbase.com
@@ -79,6 +76,7 @@ type languages struct {
 	Name       string `json:"name"`
 	NameNative string `json:"name_native"`
 }
+
 type country struct {
 	Alpha2            string       `json:"alpha2"`
 	Alpha3            string       `json:"alpha3"`
@@ -134,10 +132,7 @@ func (e *IPBaseError) Error() string {
 }
 
 // ErrInvalidIPAddress is the error raised when an invalid IP address is provided
-var ErrInvalidIPAddress = fmt.Errorf("invalid IP address provided")
-
-// ErrCacheNotConfigured is the error raised when the cache was not set up correctly
-var ErrCacheNotConfigured = fmt.Errorf("cache no configured")
+var ErrInvalidIPAddress = errors.New("invalid IP address provided")
 
 // validateIPAddress ensures valid ip address
 func validateIPAddress(ipAddress string) error {
@@ -154,7 +149,7 @@ func (g *Geofence) getIPGeoData(ipAddress string) (*ipbaseResponse, error) {
 
 	resp, err := g.ipbaseClient.R().
 		SetHeader("Accept", "application/json").
-		SetQueryParam("apikey", g.Token).
+		SetQueryParam("apikey", g.Config.Token).
 		SetQueryParam("ip", ipAddress).
 		SetResult(response).
 		SetError(ipbaseError).
@@ -188,9 +183,12 @@ func New(c *Config) (*Geofence, error) {
 	// Set up redis client if options are provided
 	// Else we create a local in-memory cache
 	if c.RedisOptions != nil {
-		geofence.redisClient = redis.NewClient(c.RedisOptions)
+		c.RedisOptions.TTL = c.CacheTTL
+		geofence.cache = cache.NewRedisCache(c.RedisOptions)
 	} else {
-		geofence.cache = cache.New(c.CacheTTL, deleteExpiredCacheItemsInternal)
+		geofence.cache = cache.NewMemoryCache(&cache.MemoryOptions{
+			TTL: c.CacheTTL,
+		})
 	}
 
 	// Get current location of specified IP address
@@ -216,7 +214,7 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 		return false, err
 	}
 
-	if g.AllowPrivateIPAddresses {
+	if g.Config.AllowPrivateIPAddresses {
 		ip := net.ParseIP(ipAddress)
 		if ip.IsPrivate() || ip.IsLoopback() {
 			return true, nil
@@ -224,7 +222,7 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 	}
 
 	// Check if ipaddress has been looked up before and is in cache
-	isIPAddressNear, found, err := g.cacheGet(ipAddress)
+	isIPAddressNear, found, err := g.cache.Get(g.ctx, ipAddress)
 	if err != nil {
 		return false, err
 	}
@@ -247,60 +245,12 @@ func (g *Geofence) IsIPAddressNear(ipAddress string) (bool, error) {
 
 	// Compare coordinates
 	// Distance must be less than or equal to the configured radius to be near
-	isNear := distance <= g.Radius
+	isNear := distance <= g.Config.Radius
 
-	err = g.cacheSet(ipAddress, isNear)
+	err = g.cache.Set(g.ctx, ipAddress, isNear)
 	if err != nil {
 		return false, err
 	}
 
 	return isNear, nil
-}
-
-func (g *Geofence) cacheGet(ipAddress string) (bool, bool, error) {
-	// Use redis if configured
-	if g.redisClient != nil {
-		val, err := g.redisClient.Get(g.ctx, ipAddress).Result()
-		if err != nil {
-			// If key is not in redis
-			if err == redis.Nil {
-				return false, false, nil
-			}
-			return false, false, err
-		}
-		isIPAddressNear, err := strconv.ParseBool(val)
-		if err != nil {
-			return false, false, err
-		}
-		return isIPAddressNear, true, nil
-	}
-
-	// Use in memory cache if configured
-	if g.cache != nil {
-		if isIPAddressNear, found := g.cache.Get(ipAddress); found {
-			return isIPAddressNear.(bool), found, nil
-		} else {
-			return false, false, nil
-		}
-	}
-
-	return false, false, ErrCacheNotConfigured
-}
-
-func (g *Geofence) cacheSet(ipAddress string, isNear bool) error {
-	// Use redis if configured
-	if g.redisClient != nil {
-		// Redis stores false as 0 for whatever reason, so we'll store as a string and parse out in cacheGet
-		err := g.redisClient.Set(g.ctx, ipAddress, strconv.FormatBool(isNear), g.Config.CacheTTL).Err()
-		if err != nil {
-			return err
-		}
-	}
-
-	// Use in memory cache if configured
-	if g.cache != nil {
-		g.cache.Set(ipAddress, isNear, g.Config.CacheTTL)
-	}
-
-	return nil
 }
