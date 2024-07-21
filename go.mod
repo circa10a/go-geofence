@@ -4,10 +4,11 @@ go 1.18
 
 require (
 	github.com/EpicStep/go-simple-geo/v2 v2.0.1
+	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/go-resty/resty/v2 v2.13.1
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/redis/go-redis/v9 v9.5.4
+	github.com/redis/go-redis/v9 v9.6.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/net v0.27.0
 )
